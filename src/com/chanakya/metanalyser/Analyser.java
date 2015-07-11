@@ -5,6 +5,7 @@
  */
 package com.chanakya.metanalyser;
 
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 
 /**
@@ -120,7 +121,12 @@ public class Analyser extends javax.swing.JFrame {
         chooser.setCurrentDirectory(new java.io.File("."));
         chooser.setDialogTitle("Choose Media Folder");
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.showDialog(this, null);
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) { 
+                tf_folder_location.setText(chooser.getSelectedFile().toString());
+                }
+              else {
+                System.out.println("No Selection ");
+      }
         
     }//GEN-LAST:event_but_folder_locationActionPerformed
 
