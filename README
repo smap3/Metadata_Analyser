@@ -6,8 +6,8 @@ Import project into Netbeans from:
 File->Import Project->From ZIP
 
 
-12-07-2015, 1:30 am
+12-07-2015, 1:30 am, nskool:
 Created Basic Application Netbeans project with JFrame, FileChooser, prints path to TextField
 
-12-07-2015, 7.00 pm
+12-07-2015, 7:00 pm, nskool:
 Get file list from selected folder, Display it in jList, added mouseclick event, to display information about selected song from the jList
