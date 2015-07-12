@@ -9,11 +9,16 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
+import javazoom.jl.decoder.JavaLayerException;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.audio.AudioHeader;
@@ -28,7 +33,8 @@ import org.jaudiotagger.tag.TagException;
 import org.jaudiotagger.tag.id3.ID3v1Tag;
 import org.jaudiotagger.tag.id3.ID3v24Frames;
 import org.jaudiotagger.tag.id3.ID3v24Tag;
-
+//Media import
+import javazoom.jl.player.*;
 /**
  *
  * @author nikhil
@@ -38,6 +44,9 @@ public class Analyser extends javax.swing.JFrame {
     private JFileChooser chooser;
     private String mediaFolderLocation;
     private File[] list_files;
+    private String playAudio;
+    private Player playMP3;
+    private Thread thread;
 
     	static Tag tag;static MP3File f;static MP3AudioHeader ah;
     /**
@@ -67,6 +76,9 @@ public class Analyser extends javax.swing.JFrame {
         media_list = new javax.swing.JList();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTA_song_info = new javax.swing.JTextArea();
+        but_play = new javax.swing.JButton();
+        but_stop = new javax.swing.JButton();
+        but_exit = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Metanalysis");
@@ -116,6 +128,20 @@ public class Analyser extends javax.swing.JFrame {
         jTA_song_info.setRows(5);
         jScrollPane2.setViewportView(jTA_song_info);
 
+        but_play.setText("Play");
+        but_play.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                but_playActionPerformed(evt);
+            }
+        });
+
+        but_stop.setText("Stop");
+        but_stop.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                but_stopActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
@@ -124,19 +150,36 @@ public class Analyser extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 252, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane2)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane2)
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addComponent(but_play)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(but_stop)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
-                .addComponent(jScrollPane1)
-                .addContainerGap())
-            .addGroup(jPanel3Layout.createSequentialGroup()
                 .addGap(80, 80, 80)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(100, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(but_play)
+                    .addComponent(but_stop))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 316, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
+
+        but_exit.setText("Exit");
+        but_exit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                but_exitActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -146,7 +189,10 @@ public class Analyser extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(but_exit)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -155,7 +201,10 @@ public class Analyser extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(but_exit)
+                .addContainerGap())
         );
 
         jTabbedPane2.addTab("Dashboard", jPanel1);
@@ -197,6 +246,40 @@ public class Analyser extends javax.swing.JFrame {
       }
         
     }//GEN-LAST:event_but_folder_locationActionPerformed
+
+    private void but_playActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_but_playActionPerformed
+        // TODO add your handling code here:
+        
+        thread=new Thread(){
+          @Override
+          public void run(){
+                       try{
+                FileInputStream fis = new FileInputStream(playAudio);
+                playMP3 = new Player(fis);
+                playMP3.play();
+                }catch(FileNotFoundException | JavaLayerException e){
+                System.out.println(e);
+            }   
+          }  
+        };
+        thread.start();
+
+    }//GEN-LAST:event_but_playActionPerformed
+
+    private void but_stopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_but_stopActionPerformed
+        // TODO add your handling code here:
+        playMP3.close();
+        try {
+            thread.join();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Analyser.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_but_stopActionPerformed
+
+    private void but_exitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_but_exitActionPerformed
+        // TODO add your handling code here:
+        System.exit(0);
+    }//GEN-LAST:event_but_exitActionPerformed
 
     public void processFolder(String folder_path){
         File folder=new File(folder_path);
@@ -249,8 +332,9 @@ public class Analyser extends javax.swing.JFrame {
                 if(index>=0){
                     Object temp=mList.getModel().getElementAt(index);
                     String temp_string=mediaFolderLocation+"/"+temp.toString();
+                    playAudio=temp_string;
                     File temp_file=new File(temp_string);
-                    		try{
+                    	try{
 			f=(MP3File)AudioFileIO.read(temp_file);
 			//tag=f.getTag();
                         ID3v24Tag v2Tag = f.getID3v2TagAsv24();
@@ -321,7 +405,10 @@ public class Analyser extends javax.swing.JFrame {
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton but_exit;
     private javax.swing.JButton but_folder_location;
+    private javax.swing.JButton but_play;
+    private javax.swing.JButton but_stop;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
