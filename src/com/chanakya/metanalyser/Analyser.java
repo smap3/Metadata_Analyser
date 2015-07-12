@@ -5,8 +5,29 @@
  */
 package com.chanakya.metanalyser;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.IOException;
+import javax.swing.DefaultListModel;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JList;
+import org.jaudiotagger.audio.AudioFile;
+import org.jaudiotagger.audio.AudioFileIO;
+import org.jaudiotagger.audio.AudioHeader;
+import org.jaudiotagger.audio.exceptions.CannotReadException;
+import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
+import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
+import org.jaudiotagger.audio.mp3.MP3AudioHeader;
+import org.jaudiotagger.audio.mp3.MP3File;
+import org.jaudiotagger.tag.FieldKey;
+import org.jaudiotagger.tag.Tag;
+import org.jaudiotagger.tag.TagException;
+import org.jaudiotagger.tag.id3.ID3v1Tag;
+import org.jaudiotagger.tag.id3.ID3v24Frames;
+import org.jaudiotagger.tag.id3.ID3v24Tag;
 
 /**
  *
@@ -14,10 +35,14 @@ import javax.swing.JFileChooser;
  */
 public class Analyser extends javax.swing.JFrame {
     
-    JFileChooser chooser;
+    private JFileChooser chooser;
+    private String mediaFolderLocation;
+    private File[] list_files;
 
+    	static Tag tag;static MP3File f;static MP3AudioHeader ah;
     /**
      * Creates new form Analyser
+     * 
      */
     public Analyser() {
         initComponents();
@@ -37,8 +62,14 @@ public class Analyser extends javax.swing.JFrame {
         jPanel2 = new javax.swing.JPanel();
         but_folder_location = new javax.swing.JButton();
         tf_folder_location = new javax.swing.JTextField();
+        jPanel3 = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        media_list = new javax.swing.JList();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jTA_song_info = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Metanalysis");
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Media Folder Location"));
 
@@ -49,6 +80,7 @@ public class Analyser extends javax.swing.JFrame {
             }
         });
 
+        tf_folder_location.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         tf_folder_location.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 tf_folder_locationActionPerformed(evt);
@@ -76,13 +108,45 @@ public class Analyser extends javax.swing.JFrame {
                 .addContainerGap(15, Short.MAX_VALUE))
         );
 
+        jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Information"));
+
+        jScrollPane1.setViewportView(media_list);
+
+        jTA_song_info.setColumns(20);
+        jTA_song_info.setRows(5);
+        jScrollPane2.setViewportView(jTA_song_info);
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 252, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane2)
+                .addContainerGap())
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addComponent(jScrollPane1)
+                .addContainerGap())
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(80, 80, 80)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(100, Short.MAX_VALUE))
+        );
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -90,7 +154,8 @@ public class Analyser extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(164, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jTabbedPane2.addTab("Dashboard", jPanel1);
@@ -104,8 +169,8 @@ public class Analyser extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jTabbedPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 288, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 63, Short.MAX_VALUE))
+                .addComponent(jTabbedPane2)
+                .addContainerGap())
         );
 
         pack();
@@ -122,7 +187,10 @@ public class Analyser extends javax.swing.JFrame {
         chooser.setDialogTitle("Choose Media Folder");
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) { 
-                tf_folder_location.setText(chooser.getSelectedFile().toString());
+                tf_folder_location.setText(mediaFolderLocation=chooser.getSelectedFile().toString());
+                tf_folder_location.setEditable(false);
+                but_folder_location.setEnabled(false);
+                processFolder(mediaFolderLocation);
                 }
               else {
                 System.out.println("No Selection ");
@@ -130,9 +198,94 @@ public class Analyser extends javax.swing.JFrame {
         
     }//GEN-LAST:event_but_folder_locationActionPerformed
 
+    public void processFolder(String folder_path){
+        File folder=new File(folder_path);
+        list_files=folder.listFiles();    
+        DefaultListModel listModel=new DefaultListModel();
+        for(int i=0;i<list_files.length;i++){
+        listModel.addElement(list_files[i].getName());
+        }
+
+        media_list.setModel(listModel);
+        media_list.setVisible(true);
+        //Add MouseListener to media_list
+        media_list.addMouseListener(mouseListener);
+        
+        
+        for(int i=0;i<list_files.length;i++){
+           if(list_files[i].isFile()){
+               //System.out.println("File: "+list_files[i].getName());
+               String song_name=list_files[i].getName();
+               File temp=new File(folder_path+"/"+song_name);
+		
+		try{
+			f=(MP3File)AudioFileIO.read(temp);
+			//tag=f.getTag();
+                        ID3v24Tag v2Tag = f.getID3v2TagAsv24();
+                        
+			ah =(MP3AudioHeader) f.getAudioHeader();
+                        
+                        if(f.hasID3v2Tag()){
+                            System.out.println(v2Tag.getFirst(ID3v24Frames.FRAME_ID_ARTIST));
+                        }
+		}catch(CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException e){
+			System.out.println("Exception: "+e);
+		}
+               
+           } else if(list_files[i].isDirectory()){
+               System.out.println("Directory: "+list_files[i].getName());
+           }
+        }
+    }
     /**
      * @param args the command line arguments
      */
+    
+    MouseListener mouseListener=new MouseAdapter() {
+        public void mouseClicked(MouseEvent mouseEvent){
+            JList mList=(JList)mouseEvent.getSource();
+            if(mouseEvent.getClickCount()==1){
+                int index=mList.locationToIndex(mouseEvent.getPoint());
+                if(index>=0){
+                    Object temp=mList.getModel().getElementAt(index);
+                    String temp_string=mediaFolderLocation+"/"+temp.toString();
+                    File temp_file=new File(temp_string);
+                    		try{
+			f=(MP3File)AudioFileIO.read(temp_file);
+			//tag=f.getTag();
+                        ID3v24Tag v2Tag = f.getID3v2TagAsv24();
+
+                        
+			ah =(MP3AudioHeader) f.getAudioHeader();
+                        
+                        if(f.hasID3v2Tag()){
+                            jTA_song_info.setText("****Song Information***");
+                            jTA_song_info.append("\n");
+                            jTA_song_info.append("\nTitle: "+v2Tag.getFirst(ID3v24Frames.FRAME_ID_TITLE));
+                            jTA_song_info.append("\nArtist: "+v2Tag.getFirst(ID3v24Frames.FRAME_ID_ARTIST));
+                            jTA_song_info.append("\nAlbum: "+v2Tag.getFirst(ID3v24Frames.FRAME_ID_ALBUM));
+                            jTA_song_info.append("\nYear: "+v2Tag.getFirst(ID3v24Frames.FRAME_ID_YEAR));
+                            
+                        }else{
+                            jTA_song_info.setText("****Song Information***");
+                            jTA_song_info.append("\n");
+                            jTA_song_info.append("\nTitle: "+v2Tag.getFirst(ID3v24Frames.FRAME_ID_TITLE));
+                            jTA_song_info.append("\nArtist: "+v2Tag.getFirst(ID3v24Frames.FRAME_ID_ARTIST));
+                            jTA_song_info.append("\nAlbum: "+v2Tag.getFirst(ID3v24Frames.FRAME_ID_ALBUM));
+                            jTA_song_info.append("\nYear: "+v2Tag.getFirst(ID3v24Frames.FRAME_ID_YEAR));
+                            
+                        }
+		}catch(CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException e){
+			System.out.println("Exception: "+e);
+		}
+                }
+            }
+        }
+};
+    
+
+    
+    
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -165,11 +318,18 @@ public class Analyser extends javax.swing.JFrame {
         });
     }
 
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton but_folder_location;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JTextArea jTA_song_info;
     private javax.swing.JTabbedPane jTabbedPane2;
+    private javax.swing.JList media_list;
     private javax.swing.JTextField tf_folder_location;
     // End of variables declaration//GEN-END:variables
 }
